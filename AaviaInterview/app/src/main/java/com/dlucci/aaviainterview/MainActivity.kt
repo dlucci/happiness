@@ -23,13 +23,12 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            Scaffold(bottomBar = { BottomNavBar(navController) }) {
-                AaviaNavController(navController = navController)
+            Scaffold(bottomBar = { BottomNavBar(navController) }) { padding ->
+                AaviaNavController(navController = navController, padding)
             }
         }
     }

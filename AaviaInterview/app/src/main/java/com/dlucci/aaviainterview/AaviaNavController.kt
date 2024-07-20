@@ -2,14 +2,23 @@ package com.dlucci.aaviainterview
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.Center
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
@@ -37,15 +46,17 @@ import androidx.navigation.compose.rememberNavController
 import com.dlucci.aaviainterview.ui.theme.Selected
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-
+import androidx.compose.ui.graphics.RectangleShape
+import com.dlucci.aaviainterview.ui.theme.AlertButtonColor
+import com.dlucci.aaviainterview.ui.theme.ButtonColor
 
 
 @Composable
-fun AaviaNavController(navController: NavHostController) {
+fun AaviaNavController(navController: NavHostController, padding : PaddingValues) {
 
     NavHost(navController = navController, startDestination = AaviaNavigationValues.home.route) {
         composable(AaviaNavigationValues.home.route) {
-            HomeScreen(navController)
+            HomeScreen(navController, padding = padding)
         }
 
         composable(AaviaNavigationValues.favorite.route) {
@@ -58,18 +69,20 @@ fun AaviaNavController(navController: NavHostController) {
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel(), padding: PaddingValues,) { //total : Float = 12.53f) {
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 30.dp, vertical = padding.calculateBottomPadding())
     ) {
         Text(
             text = "What made you happy today?",
             textAlign = TextAlign.Center,
-            fontSize = 24.sp
+            fontSize = 24.sp,
         )
-        Spacer(modifier = Modifier.height(10.dp))
+
 
         val buttonList = remember {
             mutableListOf("Family", "Friends", "Work", "Other...")
@@ -90,13 +103,18 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hilt
                         showDialog = true
                     } else {
                         if (activeElements.contains(it)) {
-                            activeElements = activeElements - it
+                            viewModel.removeActiveElements(it)
                         } else {
-                            activeElements = activeElements + it
+                            viewModel.addActiveElements(it)
                         }
                     }
-                }, label = { Text(text = it) },
-                    colors = SuggestionChipDefaults.suggestionChipColors(containerColor = if (activeElements.contains(it)) selectedColor else Color.White)
+                }, label = { Text(text = it, fontSize = 14.sp) },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = if (activeElements.contains(
+                                it
+                            )
+                        ) selectedColor else Color.White
+                    )
                 )
             }
         }
@@ -106,16 +124,27 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hilt
                 showDialog = false
             },
                 onConfirmAction = { newField ->
-                    buttonList.add(buttonList.size-1, newField)
+                    buttonList.add(buttonList.size - 1, newField)
+                    //activeElements.add(newField)
                     viewModel.activeActiveElements(activeElements)
                     showDialog = false
                 })
         }
-
         
-        Button(onClick = { viewModel.activeActiveElements(activeElements) }) {
+        Spacer(modifier = Modifier.weight(1f))
+        
+        Button(onClick = { viewModel.activeActiveElements(activeElements)},
+            shape = RoundedCornerShape(5.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = ButtonColor, disabledContainerColor = Color.Black),
+            enabled = activeElements.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp)
+
+                ) {
             Text(text = "Save")
         }
+
     }
 
 }
@@ -130,21 +159,18 @@ fun InputAlertDialog(onDismissRequest: () -> Unit, onConfirmAction: (String) -> 
     AlertDialog(
         onDismissRequest = { onDismissRequest() },
         dismissButton = {
-            Button(onClick = { onDismissRequest() }) {
-                Text("Cancel")
-            }
+            Button(onClick = { onDismissRequest() }, content = {Text("Cancel", color = AlertButtonColor)}, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent) )
+
         },
         confirmButton = {
-            Button(onClick = { onConfirmAction(newField) }) {
-                Text("Add")
-            }
+            Button(onClick = { onConfirmAction(newField) }, content = {Text("Add", color = AlertButtonColor)}, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent))
         },
         title = { Text("Add \"other\" option") },
         text = {
             TextField(
                 value = newField,
                 onValueChange = { newField = it },
-                label = { Text("Enter new field") })
+                placeholder = { Text("Enter new field", color = Color.Gray) },)
         })
 }
 

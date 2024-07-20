@@ -20,11 +20,6 @@ class HomeViewModel @Inject constructor(
         MutableStateFlow(listOf("Family", "Friends", "Work", "Other..."))
     }
 
-
-    init {
-
-    }
-
     private val _activeElements by lazy {
         mutableStateOf<Set<String>>(emptySet())
     }
@@ -33,7 +28,7 @@ class HomeViewModel @Inject constructor(
         if(!sharedPreferences.contains("aavia")) {
             _activeElements.value = emptySet()
         } else {
-            _activeElements.value = sharedPreferences.getStringSet("aavia", emptySet())!!
+            _activeElements.value = sharedPreferences.getStringSet("aavia", emptySet())?.toMutableSet() ?: emptySet()
         }
     }
 
@@ -44,5 +39,17 @@ class HomeViewModel @Inject constructor(
     fun activeActiveElements(newElements : Set<String>) {
         _activeElements.value = newElements
         sharedPreferences.edit().putStringSet("aavia", newElements).apply()
+    }
+
+    fun saveLocally() {
+        sharedPreferences.edit().putStringSet("aavia", _activeElements.value).apply()
+    }
+
+    fun addActiveElements(newElement : String) {
+        _activeElements.value = _activeElements.value.plus(newElement)
+    }
+
+    fun removeActiveElements(removedElement : String) {
+        _activeElements.value = _activeElements.value.minus(removedElement)
     }
 }
