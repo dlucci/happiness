@@ -52,7 +52,7 @@ import com.dlucci.aaviainterview.ui.theme.ButtonColor
 
 
 @Composable
-fun AaviaNavController(navController: NavHostController, padding : PaddingValues) {
+fun AaviaNavController(navController: NavHostController, padding: PaddingValues) {
 
     NavHost(navController = navController, startDestination = AaviaNavigationValues.home.route) {
         composable(AaviaNavigationValues.home.route) {
@@ -66,10 +66,52 @@ fun AaviaNavController(navController: NavHostController, padding : PaddingValues
 
 }
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hiltViewModel(), padding: PaddingValues,) { //total : Float = 12.53f) {
+fun HomeScreenFlowRow(
+    onItemAdded: (newItem: String) -> Unit,
+    onItemRemoved: (removedItem: String) -> Unit,
+    buttonList: List<String>,
+    activeElements : Set<String>,
+    onShowDialogTrue: () -> Unit
+) {
+
+    val selectedColor = Selected
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        buttonList.forEach {
+            SuggestionChip(onClick = {
+                if (it == "Other...") {
+                    onShowDialogTrue()
+                } else {
+                    if (activeElements.contains(it)) {
+                        onItemRemoved(it)
+                    } else {
+                        onItemAdded(it)
+                    }
+                }
+            }, label = { Text(text = it, fontSize = 14.sp) },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = if (activeElements.contains(
+                            it
+                        )
+                    ) selectedColor else Color.White
+                )
+            )
+        }
+    }
+
+}
+
+@SuppressLint("StateFlowValueCalledInComposition")
+@Composable
+fun HomeScreen(
+    navController: NavHostController,
+    viewModel: HomeViewModel = hiltViewModel(),
+    padding: PaddingValues,
+) { //total : Float = 12.53f) {
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,33 +133,14 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hilt
             mutableStateOf(false)
         }
 
-        var activeElements by remember { viewModel.activeElement }
-        val selectedColor = Selected
+        val activeElements by remember { viewModel.activeElement }
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            buttonList.forEach {
-                SuggestionChip(onClick = {
-                    if (it == "Other...") {
-                        showDialog = true
-                    } else {
-                        if (activeElements.contains(it)) {
-                            viewModel.removeActiveElements(it)
-                        } else {
-                            viewModel.addActiveElements(it)
-                        }
-                    }
-                }, label = { Text(text = it, fontSize = 14.sp) },
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = if (activeElements.contains(
-                                it
-                            )
-                        ) selectedColor else Color.White
-                    )
-                )
-            }
-        }
+        HomeScreenFlowRow(
+            onItemAdded = { newItem -> viewModel.addActiveElements(newItem) },
+            onItemRemoved = { removedItem -> viewModel.removeActiveElements(removedItem) },
+            buttonList = buttonList,
+            activeElements,
+            onShowDialogTrue = { showDialog = true })
 
         if (showDialog) {
             InputAlertDialog(onDismissRequest = {
@@ -125,23 +148,26 @@ fun HomeScreen(navController: NavHostController, viewModel: HomeViewModel = hilt
             },
                 onConfirmAction = { newField ->
                     buttonList.add(buttonList.size - 1, newField)
-                    //activeElements.add(newField)
-                    viewModel.activeActiveElements(activeElements)
+                    viewModel.addActiveElements(newField)
                     showDialog = false
                 })
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
-        Button(onClick = { viewModel.activeActiveElements(activeElements)},
+
+        Button(
+            onClick = { viewModel.activeActiveElements(activeElements) },
             shape = RoundedCornerShape(5.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ButtonColor, disabledContainerColor = Color.Black),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = ButtonColor,
+                disabledContainerColor = Color.Black
+            ),
             enabled = activeElements.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 10.dp)
 
-                ) {
+        ) {
             Text(text = "Save")
         }
 
@@ -159,18 +185,27 @@ fun InputAlertDialog(onDismissRequest: () -> Unit, onConfirmAction: (String) -> 
     AlertDialog(
         onDismissRequest = { onDismissRequest() },
         dismissButton = {
-            Button(onClick = { onDismissRequest() }, content = {Text("Cancel", color = AlertButtonColor)}, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent) )
+            Button(
+                onClick = { onDismissRequest() },
+                content = { Text("Cancel", color = AlertButtonColor) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+            )
 
         },
         confirmButton = {
-            Button(onClick = { onConfirmAction(newField) }, content = {Text("Add", color = AlertButtonColor)}, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent))
+            Button(
+                onClick = { onConfirmAction(newField) },
+                content = { Text("Add", color = AlertButtonColor) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+            )
         },
         title = { Text("Add \"other\" option") },
         text = {
             TextField(
                 value = newField,
                 onValueChange = { newField = it },
-                placeholder = { Text("Enter new field", color = Color.Gray) },)
+                placeholder = { Text("Enter new field", color = Color.Gray) },
+            )
         })
 }
 
